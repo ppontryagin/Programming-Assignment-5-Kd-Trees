@@ -26,7 +26,7 @@ public class KdTree {
         if (p == null)
             throw new NullPointerException();
 
-        root = put(root, p, Point2D.X_ORDER, new RectHV(0.0, 0.0, 1.0, 1.0));
+        root = put(root, p, Node.X_ORDER, new RectHV(0.0, 0.0, 1.0, 1.0));
     }
 
     private Node put(Node x, Point2D key, Comparator<Point2D> order, RectHV rect) {
@@ -40,7 +40,7 @@ public class KdTree {
         RectHV subRect;
 
         if (cmp < 0) {
-            if (order == Point2D.X_ORDER) {
+            if (order == Node.X_ORDER) {
                 subRect = new RectHV(x.rect.xmin(), x.rect.ymin(), x.p.x(), x.rect.ymax());
             } else {
                 subRect = new RectHV(x.rect.xmin(), x.rect.ymin(), x.rect.xmax(), x.p.y());
@@ -48,7 +48,7 @@ public class KdTree {
             x.lb = put(x.lb, key, flipOrder(order), subRect);
 
         } else if (cmp > 0) {
-            if (order == Point2D.X_ORDER) {
+            if (order == Node.X_ORDER) {
                 subRect = new RectHV(x.p.x(), x.rect.ymin(), x.rect.xmax(), x.rect.ymax());
             } else {
                 subRect = new RectHV(x.rect.xmin(), x.p.y(), x.rect.xmax(), x.rect.ymax());
@@ -59,10 +59,10 @@ public class KdTree {
     }
 
     private Comparator<Point2D> flipOrder(Comparator<Point2D> order) {
-        if (order == Point2D.X_ORDER)
-            return Point2D.Y_ORDER;
+        if (order == Node.X_ORDER)
+            return Node.Y_ORDER;
         else
-            return Point2D.X_ORDER;
+            return Node.X_ORDER;
     }
 
     // does the set contain point p?
@@ -70,7 +70,7 @@ public class KdTree {
         if (p == null)
             throw new NullPointerException();
 
-        return get(root, p, Point2D.X_ORDER);
+        return get(root, p, Node.X_ORDER);
     }
 
     // Return true if value associated with key is in the subtree rooted at x;
@@ -154,6 +154,9 @@ public class KdTree {
     }
 
     private static class Node {
+        public static final Comparator<Point2D> X_ORDER = new XOrder();
+        public static final Comparator<Point2D> Y_ORDER = new YOrder();
+
         private Point2D p;      // the point
         private RectHV rect;    // the axis-aligned rectangle corresponding to this node
         private Node lb;        // the left/bottom subtree
@@ -162,6 +165,23 @@ public class KdTree {
         private Node(Point2D p, RectHV rect) {
             this.p = p;
             this.rect = rect;
+        }
+
+        private static class XOrder implements Comparator<Point2D> {
+            public int compare(Point2D p, Point2D q) {
+                if (p.x() < q.x()) return -1;
+                if (p.x() > q.x()) return +1;
+                return 0;
+            }
+        }
+
+        // compare points according to their y-coordinate
+        private static class YOrder implements Comparator<Point2D> {
+            public int compare(Point2D p, Point2D q) {
+                if (p.y() < q.y()) return -1;
+                if (p.y() > q.y()) return +1;
+                return 0;
+            }
         }
     }
 }

@@ -1,3 +1,6 @@
+import java.util.ArrayList;
+import java.util.List;
+
 /*************************************************************************
  *  Compilation:  javac NearestNeighborVisualizer.java
  *  Execution:    java NearestNeighborVisualizer input.txt
