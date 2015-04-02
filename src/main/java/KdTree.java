@@ -1,6 +1,4 @@
-import java.util.Comparator;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 public class KdTree {
 
@@ -26,34 +24,63 @@ public class KdTree {
         if (p == null)
             throw new NullPointerException();
 
-        root = put(root, p, Node.X_ORDER, new RectHV(0.0, 0.0, 1.0, 1.0));
+        if (!contains(p)) {
+            root = put(root, p, Node.X_ORDER, 0.0, 0.0, 1.0, 1.0);
+            ++count;
+        }
+
     }
 
-    private Node put(Node x, Point2D key, Comparator<Point2D> order, RectHV rect) {
+//    private Node put(Node x, Point2D key, Comparator<Point2D> order, RectHV rect) {
+//        if (x == null) {
+//            return new Node(key, rect);
+//        }
+//
+//        int cmp = order.compare(key, x.p);
+//
+//        RectHV subRect;
+//
+//        if (cmp < 0) {
+//            if (order == Node.X_ORDER) {
+//                subRect = new RectHV(x.rect.xmin(), x.rect.ymin(), x.p.x(), x.rect.ymax());
+//            } else {
+//                subRect = new RectHV(x.rect.xmin(), x.rect.ymin(), x.rect.xmax(), x.p.y());
+//            }
+//            x.lb = put(x.lb, key, flipOrder(order), subRect);
+//
+//        } else if (cmp > 0) {
+//            if (order == Node.X_ORDER) {
+//                subRect = new RectHV(x.p.x(), x.rect.ymin(), x.rect.xmax(), x.rect.ymax());
+//            } else {
+//                subRect = new RectHV(x.rect.xmin(), x.p.y(), x.rect.xmax(), x.rect.ymax());
+//            }
+//            x.rt = put(x.rt, key, flipOrder(order), subRect);
+//        }
+//        return x;
+//    }
+
+    private Node put(Node x, Point2D key, Comparator<Point2D> order, double xMin, double yMin, double xMax, double yMax) {
         if (x == null) {
-            count++;
-            return new Node(key, rect);
+            return new Node(key, xMin, yMin, xMax, yMax);
         }
 
         int cmp = order.compare(key, x.p);
 
-        RectHV subRect;
-
         if (cmp < 0) {
             if (order == Node.X_ORDER) {
-                subRect = new RectHV(x.rect.xmin(), x.rect.ymin(), x.p.x(), x.rect.ymax());
+                x.lb = put(x.lb, key, flipOrder(order), x.rect.xmin(), x.rect.ymin(), x.p.x(), x.rect.ymax());
             } else {
-                subRect = new RectHV(x.rect.xmin(), x.rect.ymin(), x.rect.xmax(), x.p.y());
+                x.lb = put(x.lb, key, flipOrder(order), x.rect.xmin(), x.rect.ymin(), x.rect.xmax(), x.p.y());
             }
-            x.lb = put(x.lb, key, flipOrder(order), subRect);
 
         } else if (cmp > 0) {
             if (order == Node.X_ORDER) {
-                subRect = new RectHV(x.p.x(), x.rect.ymin(), x.rect.xmax(), x.rect.ymax());
+                x.rt = put(x.rt, key, flipOrder(order), x.p.x(), x.rect.ymin(), x.rect.xmax(), x.rect.ymax());
+
             } else {
-                subRect = new RectHV(x.rect.xmin(), x.p.y(), x.rect.xmax(), x.rect.ymax());
+                x.rt = put(x.rt, key, flipOrder(order), x.rect.xmin(), x.p.y(), x.rect.xmax(), x.rect.ymax());
+
             }
-            x.rt = put(x.rt, key, flipOrder(order), subRect);
         }
         return x;
     }
@@ -92,8 +119,6 @@ public class KdTree {
 
     // draw all points to standard draw
     public void draw() {
-
-
         walk(root, "R");
     }
 
@@ -119,24 +144,33 @@ public class KdTree {
 
             walk(r.lb, color);
             walk(r.rt, color);
-
         }
     }
 
-    // TODO all points that are inside the rectangle
+    // all points that are inside the rectangle
     public Iterable<Point2D> range(RectHV rect) {
         if (rect == null)
             throw new NullPointerException();
 
-        Set<Point2D> insidePoints = new TreeSet<Point2D>();
+        List<Point2D> result = new ArrayList<Point2D>();
 
-//        for (Point2D p : pointSet) {
-//            if (rect.contains(p))
-//                insidePoints.add(p);
-//        }
+        getInRange(root, rect, Node.X_ORDER, result);
 
-        return insidePoints;
+        return result;
     }
+
+    private void getInRange(Node x, RectHV rect, Comparator<Point2D> order, List<Point2D> result) {
+        if (x == null || !x.rect.intersects(rect))
+            return;
+
+        if (rect.contains(x.p))
+            result.add(x.p);
+
+        getInRange(x.lb, rect, flipOrder(order), result);
+        getInRange(x.rt, rect, flipOrder(order), result);
+    }
+
+
 
     // TODO a nearest neighbor in the set to point p; null if the set is empty
     public Point2D nearest(Point2D p) {
@@ -167,10 +201,17 @@ public class KdTree {
             this.rect = rect;
         }
 
+        private Node(Point2D p, double xMin, double yMin, double xMax, double yMax) {
+            this.p = p;
+            this.rect = new RectHV(xMin, yMin, xMax, yMax);
+        }
+
         private static class XOrder implements Comparator<Point2D> {
             public int compare(Point2D p, Point2D q) {
                 if (p.x() < q.x()) return -1;
                 if (p.x() > q.x()) return +1;
+                if (p.y() < q.y()) return -1;
+                if (p.y() > q.y()) return +1;
                 return 0;
             }
         }
@@ -180,6 +221,8 @@ public class KdTree {
             public int compare(Point2D p, Point2D q) {
                 if (p.y() < q.y()) return -1;
                 if (p.y() > q.y()) return +1;
+                if (p.x() < q.x()) return -1;
+                if (p.x() > q.x()) return +1;
                 return 0;
             }
         }

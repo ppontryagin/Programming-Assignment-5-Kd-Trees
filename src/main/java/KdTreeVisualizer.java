@@ -18,18 +18,18 @@ public class KdTreeVisualizer {
             if (StdDraw.mousePressed()) {
                 double x = StdDraw.mouseX();
                 double y = StdDraw.mouseY();
-                System.out.printf("%8.6f %8.6f\n", x, y);
+//                System.out.printf("%8.6f %8.6f\n", x, y);
                 Point2D p = new Point2D(x, y);
-                if (rect.contains(p)) {
+//                if (rect.contains(p)) {
                     StdOut.printf("%8.6f %8.6f\n", x, y);
                     kdtree.insert(p);
                     StdDraw.clear();
                     kdtree.draw();
-                    if (kdtree.contains(p))
-                        System.out.println("=== Contains!!!!");
-                }
+//                    if (kdtree.contains(p))
+//                        System.out.println("=== Contains!!!!");
+//                }
             }
-            StdDraw.show(50);
+            StdDraw.show(100);
         }
     }
 }
