@@ -1,9 +1,12 @@
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 
 public class KdTree {
 
     private Node root = null;
     private int count = 0;
+    private Point2D nearest;
 
     // construct an empty set of points
     public KdTree() {
@@ -19,7 +22,7 @@ public class KdTree {
         return count;
     }
 
-    // TODO add the point to the set (if it is not already in the set)
+    // add the point to the set (if it is not already in the set)
     public void insert(Point2D p) {
         if (p == null)
             throw new NullPointerException();
@@ -28,36 +31,7 @@ public class KdTree {
             root = put(root, p, Node.X_ORDER, 0.0, 0.0, 1.0, 1.0);
             ++count;
         }
-
     }
-
-//    private Node put(Node x, Point2D key, Comparator<Point2D> order, RectHV rect) {
-//        if (x == null) {
-//            return new Node(key, rect);
-//        }
-//
-//        int cmp = order.compare(key, x.p);
-//
-//        RectHV subRect;
-//
-//        if (cmp < 0) {
-//            if (order == Node.X_ORDER) {
-//                subRect = new RectHV(x.rect.xmin(), x.rect.ymin(), x.p.x(), x.rect.ymax());
-//            } else {
-//                subRect = new RectHV(x.rect.xmin(), x.rect.ymin(), x.rect.xmax(), x.p.y());
-//            }
-//            x.lb = put(x.lb, key, flipOrder(order), subRect);
-//
-//        } else if (cmp > 0) {
-//            if (order == Node.X_ORDER) {
-//                subRect = new RectHV(x.p.x(), x.rect.ymin(), x.rect.xmax(), x.rect.ymax());
-//            } else {
-//                subRect = new RectHV(x.rect.xmin(), x.p.y(), x.rect.xmax(), x.rect.ymax());
-//            }
-//            x.rt = put(x.rt, key, flipOrder(order), subRect);
-//        }
-//        return x;
-//    }
 
     private Node put(Node x, Point2D key, Comparator<Point2D> order, double xMin, double yMin, double xMax, double yMax) {
         if (x == null) {
@@ -133,17 +107,15 @@ public class KdTree {
             if (color.equals("R")) {
                 StdDraw.setPenColor(StdDraw.RED);
                 StdDraw.line(r.p.x(), r.rect.ymin(), r.p.x(), r.rect.ymax());
-                color = "B";
-            }
-            else {
+                walk(r.lb, "B");
+                walk(r.rt, "B");
+            } else {
                 StdDraw.setPenColor(StdDraw.BLUE);
                 StdDraw.line(r.rect.xmin(), r.p.y(), r.rect.xmax(), r.p.y());
-                color = "R";
+                walk(r.lb, "R");
+                walk(r.rt, "R");
             }
-//            r.rect.draw();
 
-            walk(r.lb, color);
-            walk(r.rt, color);
         }
     }
 
@@ -171,15 +143,50 @@ public class KdTree {
     }
 
 
-
-    // TODO a nearest neighbor in the set to point p; null if the set is empty
+    // a nearest neighbor in the set to point p; null if the set is empty
     public Point2D nearest(Point2D p) {
         if (p == null)
             throw new NullPointerException();
 
+        if (isEmpty())
+            return null;
 
+        nearest = root.p;
+        getNearest(root, p, Node.X_ORDER);
+        return nearest;
+    }
 
-        return null;
+    private void getNearest(Node x, Point2D p, Comparator<Point2D> order) {
+
+        if (x == null) {
+            return;
+        }
+
+        if (x.rect.distanceSquaredTo(p) >= nearest.distanceSquaredTo(p)) {
+            return;
+        }
+
+        if (x.p.distanceSquaredTo(p) < nearest.distanceSquaredTo(p)) {
+            nearest = x.p;
+        }
+
+        if (x.lb != null && x.rt != null) {
+
+            int cmp = order.compare(p, x.p);
+
+            if (cmp < 0) {
+                getNearest(x.lb, p, flipOrder(order));
+                getNearest(x.rt, p, flipOrder(order));
+            } else {
+                getNearest(x.rt, p, flipOrder(order));
+                getNearest(x.lb, p, flipOrder(order));
+            }
+        }
+        else {
+            getNearest(x.lb, p, flipOrder(order));
+            getNearest(x.rt, p, flipOrder(order));
+        }
+
     }
 
     // unit testing of the methods (optional)
@@ -195,11 +202,6 @@ public class KdTree {
         private RectHV rect;    // the axis-aligned rectangle corresponding to this node
         private Node lb;        // the left/bottom subtree
         private Node rt;        // the right/top subtree
-
-        private Node(Point2D p, RectHV rect) {
-            this.p = p;
-            this.rect = rect;
-        }
 
         private Node(Point2D p, double xMin, double yMin, double xMax, double yMax) {
             this.p = p;

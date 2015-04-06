@@ -1,6 +1,3 @@
-import java.util.ArrayList;
-import java.util.List;
-
 /*************************************************************************
  *  Compilation:  javac NearestNeighborVisualizer.java
  *  Execution:    java NearestNeighborVisualizer input.txt
@@ -49,14 +46,15 @@ public class NearestNeighborVisualizer {
             // draw in red the nearest neighbor (using brute-force algorithm)
             StdDraw.setPenRadius(.03);
             StdDraw.setPenColor(StdDraw.RED);
-            brute.nearest(query).draw();
+//            brute.nearest(query).draw();
             StdDraw.setPenRadius(.02);
 
             // draw in blue the nearest neighbor (using kd-tree algorithm)
             StdDraw.setPenColor(StdDraw.BLUE);
-//            kdtree.nearest(query).draw();
+//            kdtree.draw();
+            kdtree.nearest(query).draw();
             StdDraw.show(0);
-            StdDraw.show(400);
+            StdDraw.show(40);
         }
     }
 }
